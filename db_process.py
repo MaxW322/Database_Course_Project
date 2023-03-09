@@ -9,24 +9,28 @@ class db_process:
 
         self.dict_column = {'staff_num': 0, 'staff_name': 1, 'gender': 2, 'age': 3, 'phone': 4, 'marriage': 5,
                             'post': 6, 'department_num': 7, 'department_name': 1}
-        self.class_column = ['gender', 'age', 'phone', 'marriage', 'post', 'department_num', 'department_name']
+        self.class_column = ['gender', 'marriage', 'post', 'department_num', 'department_name']
 
+    # 显示表所有信息，输入表名(string)类型
     def show_all_info(self, sheet):
         self.cur.execute(f'select * from {sheet}')
         wholesheet = self.cur.fetchall()
         print(wholesheet)
         return wholesheet
 
+    # 删除表某列信息，输入表名(string)类型，对应主码号
     def delete_info(self, sheet, num):
         self.cur.execute(f'delete from {sheet} where {sheet}_num = {num}')
         print('删除成功')
         self.db.commit()
 
     # 单属性搜索，输入：查询表名，查询属性，查询属性信息(可选)  (全string类型)
+    # 返回 员工号，姓名，性别，年龄，电话，婚姻，岗位，所在部门号，所在部门名称
     def search_info(self, sheet, search_prop, search_info):
         self.cur.execute(
-            f'select staff_num, staff_name, gender, age, phone, marriage, post, department_name from staff left join department d on staff.department_num = d.department_num where {search_prop} = {search_info}')
+            f'select staff_num, staff_name, gender, age, phone, marriage, post, staff.department_num, department_name from staff left join department d on staff.department_num = d.department_num where {search_prop} = {search_info}')
         result = self.cur.fetchall()
+        print(result)
         return result
 
     # 增加员工行信息，输入：列表(list类型)
@@ -70,11 +74,22 @@ class db_process:
             result = self.cur.fetchall()
             return result
 
+    # 单属性分类信息: 输入 排序表名, 分类属性, 分类标签
     def classify_info(self, sheet, sort_prop, sort_info):
-        if sort_prop not in []:
+        if sort_prop not in self.class_column:
+            print('该属性无法分类')
+        else:
             self.cur.execute(f'select * from {sheet} where {sort_prop} = {sort_info}')
         result = self.cur.fetchall()
         return result
 
-    # def test_class(self):
-    #     print('test_np')
+    # 年龄范围分类: 输入 范围方式('>','=','<'需要是string类型), 分类标签数字或者string都行
+    def age_info(self, mode, age_num):
+        self.cur.execute(
+            f'select staff_num, staff_name, gender, age, phone, marriage, post, staff.department_num, department_name from staff left join department d on staff.department_num = d.department_num where age {mode} {age_num}')
+        result = self.cur.fetchall()
+        print(result)
+        return result
+
+# def test_class(self):
+#     print('test_np')
