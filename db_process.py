@@ -13,20 +13,34 @@ class db_process:
 
     # 登录函数，输入：账号，密码
     # 返回是否存在账号，是否密码正确
-    def sign(self, account, password):
+    def sign_in(self, account, password):
         self.cur.execute('select * from admin')
         result = self.cur.fetchall()
         account_list = []
         for i in range(len(result)):
-            account_list[i] = result[i][0]
+            account_list.append(str(result[i][0]))
         if account not in account_list:
             print('账号不存在')
         else:
-            if str(password) == result[account_list.index(account)][1]:
+            if password == result[account_list.index(account)][1]:
                 print('登录成功')
             else:
                 print('密码错误')
 
+    # 注册函数，输入：账号，密码
+    # 返回是否存在账号，是否注册成功
+    def sign_up(self, account, password):
+        self.cur.execute('select * from admin')
+        result = self.cur.fetchall()
+        account_list = []
+        for i in range(len(result)):
+            account_list.append(str(result[i][0]))
+        if account in account_list:
+            print('账号已存在，请直接登录')
+        else:
+            print('注册成功')
+            l = [account, password]
+            self.cur.execute(f'insert into admin {l}')
 
     # 显示表所有信息，输入表名(string)类型
     def show_all_info(self, sheet):
@@ -52,19 +66,35 @@ class db_process:
 
     # 增加员工行信息，输入：列表(list类型)
     def append_info(self, info):
-        self.cur.execute(
-            f'insert into staff values {info[0], info[1], info[2], info[3], info[4], info[5], info[6], info[7]}')
+        self.cur.execute('select staff_num from staff')
+        list_primekey = self.cur.fetchall()
+        list = []
+        for i in range(len(list_primekey)):
+            list.append(str(list_primekey[i][0]))
+        if info[0] in list:
+            print('主码已存在，无法添加新信息')
+        else:
+            self.cur.execute(
+                f'insert into staff values {info[0], info[1], info[2], info[3], info[4], info[5], info[6], info[7]}')
         self.db.commit()
 
     # 增加部门行信息，输入：列表(list类型)
     def append_department_info(self, info):
-        self.cur.execute(
-            f'insert into staff values {info[0], info[1]}')
+        self.cur.execute('select department_num from department')
+        list_primekey = self.cur.fetchall()
+        list = []
+        for i in range(len(list_primekey)):
+            list.append(str(list_primekey[i][0]))
+        if info[0] in list:
+            print('主码已存在，无法添加新信息')
+        else:
+            self.cur.execute(
+                f'insert into staff values {info[0], info[1]}')
         self.db.commit()
 
     # 单修改信息：输入 修改表名，主码号，修改属性，修改信息(全为string类型)
     def change_info(self, sheet, num, change_prop, change_info):
-        self.cur.execute(f'select * from {sheet} where {sheet}_num = num')
+        self.cur.execute(f'select * from {sheet} where {sheet}_num = {num}')
         result = self.cur.fetchall()
         l = list(result[0])
         if sheet == 'staff':
