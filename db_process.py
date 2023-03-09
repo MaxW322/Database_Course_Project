@@ -11,6 +11,23 @@ class db_process:
                             'post': 6, 'department_num': 7, 'department_name': 1}
         self.class_column = ['gender', 'marriage', 'post', 'department_num', 'department_name']
 
+    # 登录函数，输入：账号，密码
+    # 返回是否存在账号，是否密码正确
+    def sign(self, account, password):
+        self.cur.execute('select * from admin')
+        result = self.cur.fetchall()
+        account_list = []
+        for i in range(len(result)):
+            account_list[i] = result[i][0]
+        if account not in account_list:
+            print('账号不存在')
+        else:
+            if str(password) == result[account_list.index(account)][1]:
+                print('登录成功')
+            else:
+                print('密码错误')
+
+
     # 显示表所有信息，输入表名(string)类型
     def show_all_info(self, sheet):
         self.cur.execute(f'select * from {sheet}')
@@ -91,7 +108,9 @@ class db_process:
         print(result)
         return result
 
-# TODO:两属性联合查找
+    # TODO:两属性联合查找
+    def combine_info(self):
+        pass
 
 # def test_class(self):
 #     print('test_np')
