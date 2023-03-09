@@ -91,5 +91,7 @@ class db_process:
         print(result)
         return result
 
+# TODO:两属性联合查找
+
 # def test_class(self):
 #     print('test_np')

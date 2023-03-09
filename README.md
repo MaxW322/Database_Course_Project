@@ -4,7 +4,14 @@
 </h1>
 </div>
 
-# Intro
+# 臭的
+
+## TODO List
+- [x] 基础增、删、查、改
+- [x] 实现属性排序查找、年龄范围分类查找
+- [ ] 二到多属性联合查找
+ 
+## Intro
 1. 实现方法：Python `class:db_process`
 2. 使用方法：
 ```python
