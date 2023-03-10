@@ -21,11 +21,14 @@ class db_process:
             account_list.append(str(result[i][0]))
         if account not in account_list:
             print('账号不存在')
+            return -1
         else:
             if password == result[account_list.index(account)][1]:
                 print('登录成功')
+                return 1
             else:
                 print('密码错误')
+                return -1
 
     # 注册函数，输入：账号，密码
     # 返回是否存在账号，是否注册成功
@@ -37,17 +40,27 @@ class db_process:
             account_list.append(str(result[i][0]))
         if account in account_list:
             print('账号已存在，请直接登录')
+            return -1
         else:
             print('注册成功')
+            return 1
             l = [account, password]
             self.cur.execute(f'insert into admin {l}')
 
     # 显示表所有信息，输入表名(string)类型
     def show_all_info(self, sheet):
-        self.cur.execute(f'select * from {sheet}')
-        wholesheet = self.cur.fetchall()
-        print(wholesheet)
-        return wholesheet
+        if sheet is 'staff':
+            self.cur.execute(
+                f'select staff_num, staff_name, gender, age, phone, marriage, post, staff.department_num, department_name from staff left join department d on staff.department_num = d.department_num ')
+            result = self.cur.fetchall()
+            print(result)
+            return result
+        elif sheet is 'department':
+            self.cur.execute(
+                f'select d.department_num,department_name,count(staff.department_num) from staff left join department d on staff.department_num = d.department_num group by staff.department_num')
+            result = self.cur.fetchall()
+            print(result)
+            return result
 
     # 删除表某列信息，输入表名(string)类型，对应主码号
     def delete_info(self, sheet, num):
@@ -58,11 +71,18 @@ class db_process:
     # 单属性搜索，输入：查询表名，查询属性，查询属性信息(可选)  (全string类型)
     # 返回 员工号，姓名，性别，年龄，电话，婚姻，岗位，所在部门号，所在部门名称
     def search_info(self, sheet, search_prop, search_info):
-        self.cur.execute(
-            f'select staff_num, staff_name, gender, age, phone, marriage, post, staff.department_num, department_name from staff left join department d on staff.department_num = d.department_num where {search_prop} = {search_info}')
-        result = self.cur.fetchall()
-        print(result)
-        return result
+        if sheet is 'staff':
+            self.cur.execute(
+                f'select staff_num, staff_name, gender, age, phone, marriage, post, staff.department_num, department_name from staff left join department d on staff.department_num = d.department_num where {search_prop} = {search_info}')
+            result = self.cur.fetchall()
+            print(result)
+            return result
+        elif sheet is 'department':
+            self.cur.execute(
+                f'select d.department_num,department_name,count(staff.department_num) from staff left join department d on staff.department_num = d.department_num where {search_prop} = {search_info}  group by staff.department_num')
+            result = self.cur.fetchall()
+            print(result)
+            return result
 
     # 增加员工行信息，输入：列表(list类型)
     def append_info(self, info):
