@@ -68,18 +68,29 @@ class db_process:
         print('删除成功')
         self.db.commit()
 
-    # 单属性搜索，输入：查询表名，查询属性，查询属性信息(可选)  (全string类型)
+    # 单属性搜索，输入：查询表名，查询属性，查询属性信息(可选，需要是必须search_info=‘xx’明确传入参数)，只查询属性的所有元素是否GROUP模式
+    # (mode,默认True,属性信息非None时不允许触发，好像说了废话哈哈)  (全string类型)
     # 返回 员工号，姓名，性别，年龄，电话，婚姻，岗位，所在部门号，所在部门名称
-    def search_info(self, sheet, search_prop, search_info):
-        if sheet is 'staff':
-            self.cur.execute(
-                f'select staff_num, staff_name, gender, age, phone, marriage, post, staff.department_num, department_name from staff left join department d on staff.department_num = d.department_num where {search_prop} = {search_info}')
-            result = self.cur.fetchall()
-            print(result)
-            return result
-        elif sheet is 'department':
-            self.cur.execute(
-                f'select d.department_num,department_name,count(staff.department_num) from staff left join department d on staff.department_num = d.department_num where {search_prop} = {search_info}  group by staff.department_num')
+    def search_info(self, sheet, search_prop, search_info=None, mode=True):
+        if search_info is not None:
+            if sheet is 'staff':
+                self.cur.execute(
+                    f'select staff_num, staff_name, gender, age, phone, marriage, post, staff.department_num, department_name from staff left join department d on staff.department_num = d.department_num where {search_prop} = \'{search_info}\' ')
+                result = self.cur.fetchall()
+                print(result)
+                return result
+            elif sheet is 'department':
+                self.cur.execute(
+                    f'select d.department_num,department_name,count(staff.department_num) from staff left join department d on staff.department_num = d.department_num where {search_prop} = \'{search_info}\'  group by staff.department_num')
+                result = self.cur.fetchall()
+                print(result)
+                return result
+        else:
+            if mode:
+                self.cur.execute(
+                    f'select {search_prop}, count({search_prop}) from {sheet} group by {search_prop} order by {search_prop}')
+            else:
+                self.cur.execute(f'select {search_prop}, count({search_prop}) from {sheet}')
             result = self.cur.fetchall()
             print(result)
             return result
