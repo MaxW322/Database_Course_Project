@@ -49,15 +49,19 @@ class db_process:
 
     # 显示表所有信息，输入表名(string)类型
     def show_all_info(self, sheet):
-        if sheet is 'staff':
+        if sheet == 'staff':
             self.cur.execute(
                 f'select staff_num, staff_name, gender, age, phone, marriage, post, staff.department_num, department_name from staff left join department d on staff.department_num = d.department_num ')
             result = self.cur.fetchall()
             print(result)
             return result
-        elif sheet is 'department':
-            self.cur.execute(
-                f'select d.department_num,department_name,count(staff.department_num) from staff left join department d on staff.department_num = d.department_num group by staff.department_num')
+        elif sheet == 'department':
+            # self.cur.execute(
+            #     f'select d.department_num,department_name,count(staff.department_num) from staff left join department d on staff.department_num = d.department_num group by staff.department_num')
+            self.cur.execute('create or replace view temp_a(department_num, department_name) as (select d.department_num, department_name from department d left join staff on staff.department_num = d.department_num group by d.department_num, department_name)')
+            self.cur.execute('create or replace view temp_b as ( select d.department_num, count(d.department_num) as count_d from staff left join department d on staff.department_num = d.department_num group by d.department_num, department_name)')
+            self.cur.execute('create or replace view temp_department as(select temp_a.department_num, department_name,count_d from temp_a left outer join temp_b on temp_a.department_num = temp_b.department_num)')
+            self.cur.execute('select * from temp_department')
             result = self.cur.fetchall()
             print(result)
             return result
@@ -73,22 +77,40 @@ class db_process:
     # 返回 员工号，姓名，性别，年龄，电话，婚姻，岗位，所在部门号，所在部门名称
     def search_info(self, sheet, search_prop, search_info=None, mode=True):
         if search_info is not None:
-            if sheet is 'staff':
+            if sheet == 'staff':
                 self.cur.execute(
                     f'select staff_num, staff_name, gender, age, phone, marriage, post, staff.department_num, department_name from staff left join department d on staff.department_num = d.department_num where {search_prop} = \'{search_info}\' ')
                 result = self.cur.fetchall()
                 print(result)
                 return result
-            elif sheet is 'department':
+            elif sheet == 'department':
+                # self.cur.execute(
+                #     f'select d.department_num,department_name,count(staff.department_num) from staff left join department d on staff.department_num = d.department_num where {search_prop} = \'{search_info}\'  group by staff.department_num')
                 self.cur.execute(
-                    f'select d.department_num,department_name,count(staff.department_num) from staff left join department d on staff.department_num = d.department_num where {search_prop} = \'{search_info}\'  group by staff.department_num')
+                    'create or replace view temp_a(department_num, department_name) as (select d.department_num, department_name from department d left join staff on staff.department_num = d.department_num group by d.department_num, department_name)')
+                self.cur.execute(
+                    'create or replace view temp_b as ( select d.department_num, count(d.department_num) as count_d from staff left join department d on staff.department_num = d.department_num group by d.department_num, department_name)')
+                self.cur.execute(
+                    'create or replace view temp_department as(select temp_a.department_num, department_name,count_d from temp_a left outer join temp_b on temp_a.department_num = temp_b.department_num)')
+                self.cur.execute(f'select * from temp_department where {search_prop} = \'{search_info}\' ')
                 result = self.cur.fetchall()
                 print(result)
                 return result
         else:
             if mode:
-                self.cur.execute(
-                    f'select {search_prop}, count({search_prop}) from {sheet} group by {search_prop} order by {search_prop}')
+                if sheet == 'staff':
+                    self.cur.execute(
+                        f'select {search_prop}, count({search_prop}) from staff left join department d on staff.department_num = d.department_num group by {search_prop} order by {search_prop}')
+                else:
+                    self.cur.execute(
+                        'create or replace view temp_a(department_num, department_name) as (select d.department_num, department_name from department d left join staff on staff.department_num = d.department_num group by d.department_num, department_name)')
+                    self.cur.execute(
+                        'create or replace view temp_b as ( select d.department_num, count(d.department_num) as count_d from staff left join department d on staff.department_num = d.department_num group by d.department_num, department_name)')
+                    self.cur.execute(
+                        'create or replace view temp_department as(select temp_a.department_num, department_name,count_d from temp_a left outer join temp_b on temp_a.department_num = temp_b.department_num)')
+                    self.cur.execute(f'select {search_prop},count_d from temp_department ')
+                    # self.cur.execute(
+                    #     f'select {search_prop}, count({search_prop}) from staff left join department d on staff.department_num = d.department_num group by {search_prop} order by {search_prop}')
             else:
                 self.cur.execute(f'select {search_prop}, count({search_prop}) from {sheet}')
             result = self.cur.fetchall()
@@ -104,10 +126,12 @@ class db_process:
             list.append(str(list_primekey[i][0]))
         if info[0] in list:
             print('主码已存在，无法添加新信息')
+            return -1
         else:
             self.cur.execute(
                 f'insert into staff values {info[0], info[1], info[2], info[3], info[4], info[5], info[6], info[7]}')
-        self.db.commit()
+            self.db.commit()
+            return 1
 
     # 增加部门行信息，输入：列表(list类型)
     def append_department_info(self, info):
@@ -118,10 +142,12 @@ class db_process:
             list.append(str(list_primekey[i][0]))
         if info[0] in list:
             print('主码已存在，无法添加新信息')
+            return -1
         else:
             self.cur.execute(
-                f'insert into staff values {info[0], info[1]}')
-        self.db.commit()
+                f'insert into department values {info[0], info[1]}')
+            self.db.commit()
+            return 1
 
     # 单修改信息：输入 修改表名，主码号，修改属性，修改信息(全为string类型)
     def change_info(self, sheet, num, change_prop, change_info):
@@ -139,7 +165,7 @@ class db_process:
             else:
                 l[self.dict_column[f'{change_prop}']] = str(change_info)
             self.delete_info('department', num)
-            self.append_info(l)
+            self.append_department_info(l)
 
     # 单排序信息: 输入 排序表名, 排序属性, 是否倒序(默认否)
     def sort_info(self, sheet, sort_prop, deacendin=False):
